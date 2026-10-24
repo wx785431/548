@@ -1,0 +1,51 @@
+name: Build TrinityCore 5.4.8 (Windows x64)
+
+on:
+  push:
+    branches: [ master, main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 350
+
+    env:
+      VCPKG_DEFAULT_TRIPLET: x64-windows
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Install dependencies via vcpkg
+        run: |
+          vcpkg install openssl
+          vcpkg install boost-system boost-locale boost-thread boost-serialization boost-filesystem boost-program-options boost-iostreams boost-regex
+        shell: cmd
+
+      - name: Configure (CMake)
+        run: |
+          cmake -S . -B build -G "Visual Studio 17 2022" -A x64 ^
+            -DCMAKE_TOOLCHAIN_FILE=$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake ^
+            -DUSE_MYSQL_SOURCES=1 ^
+            -DBoost_USE_STATIC_LIBS=OFF ^
+            -DTOOLS=1
+        shell: cmd
+
+      - name: Build (Release)
+        run: cmake --build build --config Release -- /m /p:ContinueOnError=false /verbosity:minimal
+        shell: cmd
+
+      - name: Collect binaries
+        run: |
+          New-Item -ItemType Directory -Force -Path output | Out-Null
+          Copy-Item build\bin\Release\*.exe output\ -ErrorAction SilentlyContinue
+          Copy-Item build\bin\Release\*.dll output\ -ErrorAction SilentlyContinue
+          Get-ChildItem output
+        shell: pwsh
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tc548-server-win64
+          path: output/
