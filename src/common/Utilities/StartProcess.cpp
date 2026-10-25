@@ -24,15 +24,32 @@
 
 #include <boost/algorithm/string/join.hpp>
 #include <boost/iostreams/copy.hpp>
-#include <boost/process/args.hpp>
-#include <boost/process/child.hpp>
-#include <boost/process/env.hpp>
-#include <boost/process/exe.hpp>
-#include <boost/process/io.hpp>
-#include <boost/process/pipe.hpp>
-#include <boost/process/search_path.hpp>
+#include <boost/version.hpp>
 
-using namespace boost::process;
+// Boost 1.86 moved the legacy Boost.Process API into boost/process/v1/ and
+// Boost 1.88 removed the top-level forwarding headers. Include the v1 API
+// from its version-dependent location.
+#if BOOST_VERSION >= 108600
+#  include <boost/process/v1/args.hpp>
+#  include <boost/process/v1/child.hpp>
+#  include <boost/process/v1/env.hpp>
+#  include <boost/process/v1/exe.hpp>
+#  include <boost/process/v1/io.hpp>
+#  include <boost/process/v1/pipe.hpp>
+#  include <boost/process/v1/search_path.hpp>
+namespace bp = boost::process::v1;
+#else
+#  include <boost/process/args.hpp>
+#  include <boost/process/child.hpp>
+#  include <boost/process/env.hpp>
+#  include <boost/process/exe.hpp>
+#  include <boost/process/io.hpp>
+#  include <boost/process/pipe.hpp>
+#  include <boost/process/search_path.hpp>
+namespace bp = boost::process;
+#endif
+
+using namespace bp;
 using namespace boost::iostreams;
 
 namespace Trinity
@@ -107,7 +124,7 @@ static int CreateChildProcess(T waiter, std::string const& executable,
             return child{
                 exe = boost::filesystem::absolute(executable).string(),
                 args = argsVector,
-                env = environment(boost::this_process::environment()),
+                env = environment(bp::this_process::environment()),
                 std_in = inputFile.get(),
                 std_out = outStream,
                 std_err = errStream
@@ -119,8 +136,8 @@ static int CreateChildProcess(T waiter, std::string const& executable,
             return child{
                 exe = boost::filesystem::absolute(executable).string(),
                 args = argsVector,
-                env = environment(boost::this_process::environment()),
-                std_in = boost::process::close,
+                env = environment(bp::this_process::environment()),
+                std_in = bp::close,
                 std_out = outStream,
                 std_err = errStream
             };

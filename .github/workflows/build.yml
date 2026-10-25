@@ -22,13 +22,14 @@ jobs:
           vcpkg install openssl
           vcpkg install boost-system boost-locale boost-thread boost-serialization boost-filesystem boost-program-options boost-iostreams boost-regex
           vcpkg install boost-asio boost-process boost-property-tree boost-dll boost-dynamic-bitset boost-accumulators boost-stacktrace boost-optional boost-algorithm
+          vcpkg install libmariadb
         shell: cmd
 
       - name: Configure (CMake)
         run: |
           cmake -S . -B build -G "Visual Studio 18 2026" -A x64 ^
             -DCMAKE_TOOLCHAIN_FILE=%VCPKG_INSTALLATION_ROOT%/scripts/buildsystems/vcpkg.cmake ^
-            -DUSE_MYSQL_SOURCES=1 ^
+            -DUSE_MYSQL_SOURCES=0 ^
             -DBoost_USE_STATIC_LIBS=OFF ^
             -DTOOLS=1
         shell: cmd
@@ -42,6 +43,7 @@ jobs:
           New-Item -ItemType Directory -Force -Path output | Out-Null
           Copy-Item build\bin\Release\*.exe output\ -ErrorAction SilentlyContinue
           Copy-Item build\bin\Release\*.dll output\ -ErrorAction SilentlyContinue
+          Copy-Item $env:VCPKG_INSTALLATION_ROOT\installed\x64-windows\bin\*.dll output\ -ErrorAction SilentlyContinue
           Get-ChildItem output
         shell: pwsh
 
