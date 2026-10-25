@@ -124,7 +124,7 @@ static int CreateChildProcess(T waiter, std::string const& executable,
             return child{
                 exe = boost::filesystem::absolute(executable).string(),
                 args = argsVector,
-                env = environment(bp::this_process::environment()),
+                env = environment(boost::this_process::environment()),
                 std_in = inputFile.get(),
                 std_out = outStream,
                 std_err = errStream
@@ -136,7 +136,7 @@ static int CreateChildProcess(T waiter, std::string const& executable,
             return child{
                 exe = boost::filesystem::absolute(executable).string(),
                 args = argsVector,
-                env = environment(bp::this_process::environment()),
+                env = environment(boost::this_process::environment()),
                 std_in = bp::close,
                 std_out = outStream,
                 std_err = errStream
