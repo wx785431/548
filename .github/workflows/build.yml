@@ -7,11 +7,13 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: windows-2022
     timeout-minutes: 350
 
     env:
       VCPKG_DEFAULT_TRIPLET: x64-windows
+      # 用 v143 工具集编译 vcpkg 依赖 DLL，保证产物在 Win7 SP1 上可加载
+      VCPKG_PLATFORM_TOOLSET: v143
 
     steps:
       - name: Checkout source
@@ -25,10 +27,13 @@ jobs:
           vcpkg install libmariadb
         shell: cmd
 
-      - name: Configure (CMake)
+      - name: Configure (CMake, Win7-compatible toolset v143)
         run: |
-          cmake -S . -B build -G "Visual Studio 18 2026" -A x64 ^
+          cmake -S . -B build -G "Visual Studio 17 2022" -A x64 ^
             -DCMAKE_TOOLCHAIN_FILE=%VCPKG_INSTALLATION_ROOT%/scripts/buildsystems/vcpkg.cmake ^
+            -DCMAKE_SYSTEM_VERSION=10.0.22621.0 ^
+            -DCMAKE_C_FLAGS="/D_WIN32_WINNT=0x0601" ^
+            -DCMAKE_CXX_FLAGS="/D_WIN32_WINNT=0x0601" ^
             -DUSE_MYSQL_SOURCES=0 ^
             -DBoost_USE_STATIC_LIBS=OFF ^
             -DTOOLS=1
@@ -37,6 +42,23 @@ jobs:
       - name: Build (Release)
         run: cmake --build build --config Release -- /m /p:ContinueOnError=false /verbosity:minimal
         shell: cmd
+
+      - name: Verify no Win8+ only imports
+        run: |
+          $files = Get-ChildItem build\bin\Release\*.exe
+          $bad = $false
+          foreach ($f in $files) {
+            $bytes = [System.IO.File]::ReadAllBytes($f.FullName)
+            $text = [System.Text.Encoding]::ASCII.GetString($bytes)
+            if ($text.Contains("CreateFile2")) {
+              Write-Host "FAIL: $($f.Name) still references CreateFile2 - not Win7 safe"
+              $bad = $true
+            } else {
+              Write-Host "OK: $($f.Name) is Win7 safe"
+            }
+          }
+          if ($bad) { exit 1 }
+        shell: pwsh
 
       - name: Collect binaries
         run: |
