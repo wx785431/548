@@ -24,12 +24,14 @@
 
 class ThreadPool
 {
-    typedef std::unique_ptr<boost::asio::io_context::work> worker;
+    // boost::asio::io_context::work was removed in Boost 1.91+; executor_work_guard
+    // (available since Boost 1.66) provides the same keep-alive semantics.
+    typedef std::unique_ptr<boost::asio::executor_work_guard<boost::asio::io_context::executor_type>> worker;
     typedef boost::asio::io_context service;
     typedef boost::thread_group pool;
 public:
     ThreadPool(size_t threads)
-        : _worker(new worker::element_type{ _service })
+        : _worker(new worker::element_type(_service.get_executor()))
     {
         while (threads--)
         {
@@ -48,7 +50,7 @@ public:
     template<class F>
     void Enqueue(F f)
     {
-        _service.post(f);
+        boost::asio::post(_service, f);
     }
 
 private:
