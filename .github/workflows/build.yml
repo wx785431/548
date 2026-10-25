@@ -32,8 +32,8 @@ jobs:
           cmake -S . -B build -G "Visual Studio 17 2022" -A x64 ^
             -DCMAKE_TOOLCHAIN_FILE=%VCPKG_INSTALLATION_ROOT%/scripts/buildsystems/vcpkg.cmake ^
             -DCMAKE_SYSTEM_VERSION=10.0.22621.0 ^
-            -DCMAKE_C_FLAGS="/D_WIN32_WINNT=0x0601" ^
-            -DCMAKE_CXX_FLAGS="/D_WIN32_WINNT=0x0601" ^
+            -DCMAKE_C_FLAGS="/DWIN32 /D_WINDOWS /D_WIN32_WINNT=0x0601" ^
+            -DCMAKE_CXX_FLAGS="/DWIN32 /D_WINDOWS /EHsc /GR /D_WIN32_WINNT=0x0601" ^
             -DUSE_MYSQL_SOURCES=0 ^
             -DBoost_USE_STATIC_LIBS=OFF ^
             -DTOOLS=1
