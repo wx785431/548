@@ -21,6 +21,7 @@ jobs:
         run: |
           vcpkg install openssl
           vcpkg install boost-system boost-locale boost-thread boost-serialization boost-filesystem boost-program-options boost-iostreams boost-regex
+          vcpkg install boost-asio boost-process boost-property-tree boost-dll boost-dynamic-bitset boost-accumulators boost-stacktrace boost-optional boost-algorithm
         shell: cmd
 
       - name: Configure (CMake)

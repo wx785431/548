@@ -10,7 +10,9 @@
 # implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 # Set build-directive (used in core to tell which buildtype we used)
-add_definitions(-D_BUILD_DIRECTIVE='"$(CONFIGURATION)"')
+# NOTE: add_compile_definitions escapes the value correctly for CMP0005 NEW (CMake 4.x);
+# the old $(CONFIGURATION) Makefile macro no longer expands with Ninja/Make generators
+add_compile_definitions(_BUILD_DIRECTIVE=\"${CMAKE_BUILD_TYPE}\")
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17") # clang issue
 

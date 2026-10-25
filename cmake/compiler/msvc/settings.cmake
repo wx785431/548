@@ -42,7 +42,11 @@ else()
 endif()
 
 # Set build-directive (used in core to tell which buildtype we used)
-add_definitions(-D_BUILD_DIRECTIVE=\\"$(ConfigurationName)\\")
+# NOTE: The old add_definitions(-D_BUILD_DIRECTIVE=\\"$(ConfigurationName)\\") hack
+# relied on CMP0005 OLD behaviour and the obsolete MSBuild $(ConfigurationName)
+# macro. CMake 4.x (CMP0005 NEW) mangles those escapes, so use a generator
+# expression instead; CMake escapes the quotes for the native build system.
+add_compile_definitions(_BUILD_DIRECTIVE=\"$<CONFIG>\")
 
 # multithreaded compiling on VS
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")

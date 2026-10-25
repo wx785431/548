@@ -10,7 +10,8 @@
 # implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 # Set build-directive (used in core to tell which buildtype we used)
-add_definitions(-D_BUILD_DIRECTIVE='"${CMAKE_BUILD_TYPE}"')
+# NOTE: add_compile_definitions escapes the value correctly for CMP0005 NEW (CMake 4.x)
+add_compile_definitions(_BUILD_DIRECTIVE=\"${CMAKE_BUILD_TYPE}\")
 add_definitions(-fno-delete-null-pointer-checks)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")

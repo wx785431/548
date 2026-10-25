@@ -493,11 +493,17 @@
 #cmakedefine ssize_t @ssize_t@
 #cmakedefine strcasecmp @strcasecmp@
 #cmakedefine strncasecmp @strncasecmp@
+/* VS2015+ has a conforming snprintf/vsnprintf; defining these as macros
+   conflicts with the UCRT declaration (#error C1189 on VS 2026) */
+#if defined(_MSC_VER) && (_MSC_VER < 1900)
 #cmakedefine snprintf @snprintf@
+#endif
 #cmakedefine strtok_r @strtok_r@
 #cmakedefine strtoll @strtoll@
 #cmakedefine strtoull @strtoull@
+#if defined(_MSC_VER) && (_MSC_VER < 1900)
 #cmakedefine vsnprintf @vsnprintf@
+#endif
 #if (_MSC_VER > 1310)
 # define HAVE_SETENV
 #define setenv(a,b,c) _putenv_s(a,b)
