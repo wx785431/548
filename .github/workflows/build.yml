@@ -14,6 +14,8 @@ jobs:
       VCPKG_DEFAULT_TRIPLET: x64-windows
       # 用 v143 工具集编译 vcpkg 依赖 DLL，保证产物在 Win7 SP1 上可加载
       VCPKG_PLATFORM_TOOLSET: v143
+      # 使用仓库内置的 overlay port：libmariadb 编译时去掉 TLS（Win7 无 TLS 1.2 也能连库）
+      VCPKG_OVERLAY_PORTS: ${{ github.workspace }}/vcpkg-overlay
 
     steps:
       - name: Checkout source
