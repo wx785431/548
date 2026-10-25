@@ -24,8 +24,8 @@
 
 class ThreadPool
 {
-    typedef std::unique_ptr<boost::asio::io_service::work> worker;
-    typedef boost::asio::io_service service;
+    typedef std::unique_ptr<boost::asio::io_context::work> worker;
+    typedef boost::asio::io_context service;
     typedef boost::thread_group pool;
 public:
     ThreadPool(size_t threads)

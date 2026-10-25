@@ -11,15 +11,17 @@
 
 # Before project or language initialization
 
+# cmake_minimum_required() must be the first command of the top-level file
+cmake_minimum_required(VERSION 3.16)
+
 # Set projectname (must be done AFTER setting configurationtypes)
 project(Pandaria_5.4.8)
 
 # CMake policies (can not be handled elsewhere)
-cmake_minimum_required(VERSION 3.16)
-cmake_policy(SET CMP0005 OLD)
-if(POLICY CMP0043)
-  cmake_policy(SET CMP0043 OLD) # Disable 'Ignore COMPILE_DEFINITIONS_<Config> properties'
-endif(POLICY CMP0043)
+# NOTE: The old code forced CMP0005/CMP0043 to OLD here. CMake 4.x no longer
+# supports the OLD behaviour of those policies and aborts the configure step
+# ("Policy CMP0005 may not be set to OLD behavior"), so the settings have been
+# dropped. cmake_minimum_required(3.16) already selects NEW behaviour for both.
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_EXTENSIONS OFF)
