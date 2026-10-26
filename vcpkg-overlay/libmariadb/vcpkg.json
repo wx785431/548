@@ -2,7 +2,7 @@
   "name": "libmariadb",
   "version-semver": "3.4.11",
   "port-version": 1,
-  "description": "MariaDB Connector/C is used to connect C/C++ applications to MariaDB and MySQL databases (Win7 compat overlay: built without TLS)",
+  "description": "MariaDB Connector/C is used to connect C/C++ applications to MariaDB and MySQL databases (Win7 compat overlay: built with OpenSSL TLS backend)",
   "homepage": "https://github.com/mariadb-corporation/mariadb-connector-c",
   "license": "LGPL-2.1-or-later",
   "supports": "!uwp & !xbox",
@@ -14,6 +14,7 @@
       ],
       "platform": "windows"
     },
+    "openssl",
     {
       "name": "vcpkg-cmake",
       "host": true
