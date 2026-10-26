@@ -1,17 +1,14 @@
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -440,10 +440,13 @@
+@@ -439,6 +439,11 @@
+   INCLUDE_DIRECTORIES("${CC_SOURCE_DIR}/plugins/pvio/")
    SET(SSL_LIBRARIES secur32 crypt32 bcrypt)
    SET(TLS_LIBRARY_VERSION "Schannel ${CMAKE_SYSTEM_VERSION}")
--ELSE()
--  MESSAGE(FATAL_ERROR "Invalid TLS/SSL option '${WITH_SSL}'")
 +ELSEIF(WITH_SSL STREQUAL "OFF")
 +  # TLS/SSL support completely disabled (Win7 compatibility overlay).
 +  # No HAVE_TLS / HAVE_SCHANNEL / HAVE_OPENSSL defines are set, so
 +  # ma_tls.c compiles to empty stubs and no secure/*.c files are built.
 +  MESSAGE1(TLS_LIBRARY_VERSION "TLS/SSL support disabled")
-+ELSE()
-+  MESSAGE(FATAL_ERROR "Invalid TLS/SSL option '${WITH_SSL}'")
+ ELSE()
+   MESSAGE(FATAL_ERROR "Invalid TLS/SSL option '${WITH_SSL}'")
  ENDIF()
- MESSAGE1(TLS_LIBRARY_VERSION "TLS library/version: ${TLS_LIBRARY_VERSION}")
- MARK_AS_ADVANCED(SSL_SOURCES)
