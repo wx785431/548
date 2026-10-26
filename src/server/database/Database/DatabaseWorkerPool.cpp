@@ -398,7 +398,11 @@ uint32 DatabaseWorkerPool<T>::OpenConnections(InternalIndex type, uint8 numConne
 #ifndef LIBMARIADB
         else if (connection->GetServerVersion() < MIN_MYSQL_SERVER_VERSION)
 #else
-        else if (connection->GetServerVersion() < MIN_MARIADB_SERVER_VERSION)
+        // Accept both MariaDB (>= 10.2.9) and MySQL (>= 5.7) servers when built against libmariadb.
+        // MariaDB server version ids are >= 100000 (10.x+); MySQL ids are < 100000 (e.g. 8.0.30 = 80030).
+        else if (connection->GetServerVersion() >= 100000u
+                 ? connection->GetServerVersion() < MIN_MARIADB_SERVER_VERSION
+                 : connection->GetServerVersion() < MIN_MYSQL_SERVER_VERSION)
 #endif
         {
 #ifndef LIBMARIADB
