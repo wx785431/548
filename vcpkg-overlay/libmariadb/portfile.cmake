@@ -21,7 +21,6 @@ vcpkg_from_github(
         library-linkage.diff
         cmake-export.diff
         no-abs-path.diff
-        no-tls.diff
 )
 file(REMOVE_RECURSE
     "${SOURCE_PATH}/cmake/FindIconv.cmake"
@@ -41,8 +40,11 @@ if("zstd" IN_LIST FEATURES)
     set(zstd_plugin_type ${plugin_type})
 endif()
 
-# --- the actual overlay change: always build without TLS ---
-set(WITH_SSL OFF)
+# --- the actual overlay change: use OpenSSL as TLS backend instead of Schannel ---
+# Win7's Schannel cannot negotiate TLS 1.2 without registry tweaks, which makes
+# the connector fail with SEC_E_UNSUPPORTED_FUNCTION. OpenSSL 3 is already
+# shipped with the server, so negotiating TLS through OpenSSL works everywhere.
+set(WITH_SSL OPENSSL)
 
 vcpkg_cmake_configure(
     SOURCE_PATH "${SOURCE_PATH}"
