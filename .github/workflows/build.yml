@@ -46,7 +46,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: C:\vcpkg-binary-cache
-          key: vcpkg-win7-deps-1
+          key: vcpkg-win7-deps-2
 
       - name: Install dependencies via vcpkg
         env:
@@ -57,6 +57,7 @@ jobs:
             boost-regex boost-locale boost-asio boost-dll boost-accumulators ^
             boost-circular-buffer boost-property-tree boost-stacktrace boost-heap ^
             boost-dynamic-bitset boost-algorithm boost-lexical-cast boost-functional ^
+            boost-process ^
             --triplet x64-windows-win7 --overlay-triplets=%GITHUB_WORKSPACE%\triplets > vcpkg_install.log 2>&1
           set RC=%ERRORLEVEL%
           type vcpkg_install.log
@@ -78,8 +79,8 @@ jobs:
             -DCMAKE_TOOLCHAIN_FILE=%VCPKG_INSTALLATION_ROOT%/scripts/buildsystems/vcpkg.cmake ^
             -DVCPKG_TARGET_TRIPLET=x64-windows-win7 ^
             -DVCPKG_OVERLAY_TRIPLETS=%GITHUB_WORKSPACE%/triplets ^
-            -DCMAKE_C_FLAGS="/D_WIN32_WINNT=0x0601 /DWINVER=0x0601" ^
-            -DCMAKE_CXX_FLAGS="/D_WIN32_WINNT=0x0601 /DWINVER=0x0601" ^
+            -DCMAKE_C_FLAGS="/DWIN32 /D_WINDOWS /W3 /D_WIN32_WINNT=0x0601 /DWINVER=0x0601" ^
+            -DCMAKE_CXX_FLAGS="/DWIN32 /D_WINDOWS /W3 /GR /EHsc /D_WIN32_WINNT=0x0601 /DWINVER=0x0601" ^
             -DUSE_MYSQL_SOURCES=0 ^
             -DBoost_USE_STATIC_LIBS=OFF ^
             -DTOOLS=1
