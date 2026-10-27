@@ -9,6 +9,9 @@ on:
     branches: [ master, main, standard-playerbots ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: windows-2022
@@ -103,3 +106,19 @@ jobs:
         with:
           name: tc548-server-win7
           path: output/
+
+      - name: Package zip
+        shell: pwsh
+        run: Compress-Archive -Path output\* -DestinationPath tc548-server-win7.zip -Force
+
+      - name: Publish release asset (anonymous download)
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release view win7-latest --repo $env:GITHUB_REPOSITORY 2>$null | Out-Null
+          if ($LASTEXITCODE -ne 0) {
+            gh release create win7-latest --repo $env:GITHUB_REPOSITORY --title "TC 5.4.8 build for Win7 / Server 2008 R2" --notes "target: _WIN32_WINNT=0x0601"
+          }
+          gh release upload win7-latest tc548-server-win7.zip --repo $env:GITHUB_REPOSITORY --clobber
+          Write-Host "asset url: https://github.com/$env:GITHUB_REPOSITORY/releases/download/win7-latest/tc548-server-win7.zip"
