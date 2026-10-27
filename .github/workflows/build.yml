@@ -40,8 +40,25 @@ jobs:
 
       - name: Install dependencies via vcpkg
         run: |
-          vcpkg install openssl boost libmariadb --triplet x64-windows-win7 --overlay-triplets=%GITHUB_WORKSPACE%\triplets
+          vcpkg install openssl libmariadb ^
+            boost-system boost-filesystem boost-program-options boost-iostreams ^
+            boost-regex boost-locale boost-asio boost-dll boost-accumulators ^
+            boost-circular-buffer boost-property-tree boost-stacktrace boost-heap ^
+            boost-dynamic-bitset boost-algorithm boost-lexical-cast boost-functional ^
+            --triplet x64-windows-win7 --overlay-triplets=%GITHUB_WORKSPACE%\triplets > vcpkg_install.log 2>&1
+          set RC=%ERRORLEVEL%
+          type vcpkg_install.log
+          exit /b %RC%
         shell: cmd
+
+      - name: Dump vcpkg log tail to summary (readable without login)
+        if: failure()
+        shell: pwsh
+        run: |
+          if (Test-Path vcpkg_install.log) {
+            "## vcpkg install tail" | Add-Content $env:GITHUB_STEP_SUMMARY
+            Get-Content vcpkg_install.log -Tail 200 | ForEach-Object { Add-Content $env:GITHUB_STEP_SUMMARY $_ }
+          }
 
       - name: Configure (CMake)
         run: |
