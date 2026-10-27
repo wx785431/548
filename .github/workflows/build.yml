@@ -102,6 +102,23 @@ jobs:
             Get-Content build.log -Tail 150 | ForEach-Object { Add-Content $env:GITHUB_STEP_SUMMARY $_ }
           }
 
+      - name: Upload failure logs to release (anonymous download)
+        if: failure()
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $files = @('vcpkg_install.log','build.log') | Where-Object { Test-Path $_ }
+          if ($files.Count -gt 0) {
+            Compress-Archive -Path $files -DestinationPath ci-fail-logs.zip -Force
+            gh release view ci-logs --repo $env:GITHUB_REPOSITORY 2>$null | Out-Null
+            if ($LASTEXITCODE -ne 0) {
+              gh release create ci-logs --repo $env:GITHUB_REPOSITORY --title "CI failure logs" --notes "auto-uploaded on failure"
+            }
+            gh release upload ci-logs ci-fail-logs.zip --repo $env:GITHUB_REPOSITORY --clobber
+            Write-Host "logs: https://github.com/$env:GITHUB_REPOSITORY/releases/download/ci-logs/ci-fail-logs.zip"
+          }
+
       - name: Verify Windows 7 compatibility (no Win8+ APIs)
         shell: pwsh
         run: |
