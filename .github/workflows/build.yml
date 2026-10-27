@@ -1,4 +1,8 @@
-name: Build TrinityCore 5.4.8 (Windows x64)
+name: Build TrinityCore 5.4.8 (Win7 / Server 2008 R2 x64)
+
+# 目标平台：Windows Server 2008 R2 SP1 / Windows 7 (NT 6.1)
+# 关键：所有目标与依赖统一以 _WIN32_WINNT=0x0601 编译，避免引入
+#       CreateFile2 / GetSystemTimePreciseAsFileTime 等 Win8+ API。
 
 on:
   push:
@@ -7,27 +11,43 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: windows-2022
     timeout-minutes: 350
 
     env:
-      VCPKG_DEFAULT_TRIPLET: x64-windows
+      VCPKG_DEFAULT_TRIPLET: x64-windows-win7
 
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
 
+      - name: Write vcpkg triplet (Windows 7 target)
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path triplets | Out-Null
+          $t = @(
+            'set(VCPKG_TARGET_ARCHITECTURE x64)',
+            'set(VCPKG_CRT_LINKAGE dynamic)',
+            'set(VCPKG_LIBRARY_LINKAGE dynamic)',
+            'set(VCPKG_C_FLAGS "/D_WIN32_WINNT=0x0601 /DWINVER=0x0601")',
+            'set(VCPKG_CXX_FLAGS "/D_WIN32_WINNT=0x0601 /DWINVER=0x0601")'
+          )
+          Set-Content -Path triplets/x64-windows-win7.cmake -Value $t -Encoding ASCII
+          Get-Content triplets/x64-windows-win7.cmake
+
       - name: Install dependencies via vcpkg
         run: |
-          vcpkg install openssl
-          vcpkg install boost
-          vcpkg install libmariadb
+          vcpkg install openssl boost libmariadb --triplet x64-windows-win7 --overlay-triplets=%GITHUB_WORKSPACE%\triplets
         shell: cmd
 
       - name: Configure (CMake)
         run: |
-          cmake -S . -B build -G "Visual Studio 18 2026" -A x64 ^
+          cmake -S . -B build -G "Visual Studio 17 2022" -A x64 ^
             -DCMAKE_TOOLCHAIN_FILE=%VCPKG_INSTALLATION_ROOT%/scripts/buildsystems/vcpkg.cmake ^
+            -DVCPKG_TARGET_TRIPLET=x64-windows-win7 ^
+            -DVCPKG_OVERLAY_TRIPLETS=%GITHUB_WORKSPACE%/triplets ^
+            -DCMAKE_C_FLAGS="/D_WIN32_WINNT=0x0601 /DWINVER=0x0601" ^
+            -DCMAKE_CXX_FLAGS="/D_WIN32_WINNT=0x0601 /DWINVER=0x0601" ^
             -DUSE_MYSQL_SOURCES=0 ^
             -DBoost_USE_STATIC_LIBS=OFF ^
             -DTOOLS=1
@@ -37,17 +57,49 @@ jobs:
         run: cmake --build build --config Release -- /m /p:ContinueOnError=false /verbosity:minimal
         shell: cmd
 
+      - name: Verify Windows 7 compatibility (no Win8+ APIs)
+        shell: pwsh
+        run: |
+          $apis = @('CreateFile2','GetSystemTimePreciseAsFileTime','WaitOnAddress',
+                    'PathCchCanonicalizeEx','SetThreadDescription','GetThreadInformation',
+                    'CreateFileMappingFromApp','GetSystemCpuSetInformation')
+          $hits = @()
+          foreach ($f in Get-ChildItem build\bin\Release\*.exe) {
+            $txt = [System.Text.Encoding]::ASCII.GetString([System.IO.File]::ReadAllBytes($f.FullName))
+            foreach ($a in $apis) { if ($txt.Contains($a)) { $hits += "$($f.Name) => $a" } }
+          }
+          if ($hits.Count -gt 0) {
+            foreach ($h in $hits) { Write-Host "::error::Win8+ API leaked: $h" }
+            exit 1
+          }
+          Write-Host "OK: exe 未引用任何 Windows 8+ API，可在 Server 2008 R2 上加载"
+
+      - name: Verify dependency DLLs (no Win8+ APIs)
+        shell: pwsh
+        run: |
+          $apis = @('CreateFile2','GetSystemTimePreciseAsFileTime','WaitOnAddress','PathCchCanonicalizeEx')
+          $hits = @()
+          Get-ChildItem "$env:VCPKG_INSTALLATION_ROOT\installed\x64-windows-win7\bin\*.dll" -ErrorAction SilentlyContinue | ForEach-Object {
+            $txt = [System.Text.Encoding]::ASCII.GetString([System.IO.File]::ReadAllBytes($_.FullName))
+            foreach ($a in $apis) { if ($txt.Contains($a)) { $hits += "$($_.Name) => $a" } }
+          }
+          if ($hits.Count -gt 0) {
+            foreach ($h in $hits) { Write-Host "::warning::DLL 仍引用 Win8+ API: $h" }
+          } else {
+            Write-Host "OK: 依赖 DLL 无 Windows 8+ API"
+          }
+
       - name: Collect binaries
         run: |
           New-Item -ItemType Directory -Force -Path output | Out-Null
           Copy-Item build\bin\Release\*.exe output\ -ErrorAction SilentlyContinue
           Copy-Item build\bin\Release\*.dll output\ -ErrorAction SilentlyContinue
-          Copy-Item $env:VCPKG_INSTALLATION_ROOT\installed\x64-windows\bin\*.dll output\ -ErrorAction SilentlyContinue
-          Get-ChildItem output
+          Copy-Item $env:VCPKG_INSTALLATION_ROOT\installed\x64-windows-win7\bin\*.dll output\ -ErrorAction SilentlyContinue
+          Get-ChildItem output | Measure-Object | Select-Object -ExpandProperty Count
         shell: pwsh
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: tc548-server-win64
+          name: tc548-server-win7
           path: output/
