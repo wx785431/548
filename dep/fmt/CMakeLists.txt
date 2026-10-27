@@ -34,6 +34,11 @@ target_include_directories(fmt
   PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
+# fmt's Unicode support requires the MSVC /utf-8 flag (C2338 static assertion otherwise)
+if(MSVC)
+  target_compile_options(fmt PUBLIC /utf-8)
+endif()
+
 set_target_properties(fmt
   PROPERTIES
     FOLDER
