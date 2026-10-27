@@ -38,7 +38,19 @@ jobs:
           Set-Content -Path triplets/x64-windows-win7.cmake -Value $t -Encoding ASCII
           Get-Content triplets/x64-windows-win7.cmake
 
+      - name: Prepare vcpkg binary cache dir
+        shell: pwsh
+        run: New-Item -ItemType Directory -Force -Path C:\vcpkg-binary-cache | Out-Null
+
+      - name: Cache vcpkg binaries
+        uses: actions/cache@v4
+        with:
+          path: C:\vcpkg-binary-cache
+          key: vcpkg-win7-deps-1
+
       - name: Install dependencies via vcpkg
+        env:
+          VCPKG_DEFAULT_BINARY_CACHE: C:\vcpkg-binary-cache
         run: |
           vcpkg install openssl libmariadb ^
             boost-system boost-filesystem boost-program-options boost-iostreams ^
@@ -74,8 +86,21 @@ jobs:
         shell: cmd
 
       - name: Build (Release)
-        run: cmake --build build --config Release -- /m /p:ContinueOnError=false /verbosity:minimal
+        run: |
+          cmake --build build --config Release -- /m /p:ContinueOnError=false /verbosity:minimal > build.log 2>&1
+          set RC=%ERRORLEVEL%
+          type build.log
+          exit /b %RC%
         shell: cmd
+
+      - name: Dump build log tail to summary (readable without login)
+        if: failure()
+        shell: pwsh
+        run: |
+          if (Test-Path build.log) {
+            "## build log tail" | Add-Content $env:GITHUB_STEP_SUMMARY
+            Get-Content build.log -Tail 150 | ForEach-Object { Add-Content $env:GITHUB_STEP_SUMMARY $_ }
+          }
 
       - name: Verify Windows 7 compatibility (no Win8+ APIs)
         shell: pwsh
